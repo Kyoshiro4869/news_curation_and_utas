@@ -1,16 +1,29 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { useAuth } from "@/contexts/auth-context"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { toast } from "@/components/ui/use-toast"
-import { Loader2 } from "lucide-react"
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useAuth } from "@/contexts/auth-context";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { toast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -19,11 +32,11 @@ const formSchema = z.object({
   password: z.string().min(6, {
     message: "パスワードは6文字以上で入力してください",
   }),
-})
+});
 
 export default function LoginPage() {
-  const { signIn } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
+  const { signIn } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -31,25 +44,25 @@ export default function LoginPage() {
       email: "",
       password: "",
     },
-  })
+  });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await signIn(values.email, values.password)
+      await signIn(values.email, values.password);
       toast({
         title: "ログインしました",
         description: "管理画面にアクセスできます",
-      })
+      });
     } catch (error) {
-      console.error(error)
+      console.error(error);
       toast({
         title: "ログインに失敗しました",
         description: "メールアドレスまたはパスワードが正しくありません",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -57,8 +70,10 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">管理者ログイン</CardTitle>
-          <CardDescription>ニュースキュレーションアプリの管理画面にログインします</CardDescription>
+          <CardTitle className="text-2xl font-bold">
+            TIC管理者ログイン
+          </CardTitle>
+          <CardDescription>コンテンツ管理画面にログインします</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -104,5 +119,5 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

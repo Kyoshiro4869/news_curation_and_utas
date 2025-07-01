@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { useAuth } from "@/contexts/auth-context"
-import { Button } from "@/components/ui/button"
-import { LogOut, User } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context";
+import { Button } from "@/components/ui/button";
+import { LogOut, User } from "lucide-react";
 
 export default function Header() {
-  const { user, signOut } = useAuth()
+  const { user, signOut } = useAuth();
 
   return (
     <header className="bg-white border-b">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <div className="font-semibold text-lg">ニュースキュレーションアプリ</div>
+        <div className="font-semibold text-lg">TICコンテンツ管理</div>
         {user && (
           <div className="flex items-center gap-4">
             <div className="flex items-center text-sm text-gray-600">
@@ -25,5 +25,5 @@ export default function Header() {
         )}
       </div>
     </header>
-  )
+  );
 }
