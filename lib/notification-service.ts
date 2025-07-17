@@ -13,6 +13,7 @@ import {
   Timestamp,
   QuerySnapshot,
   DocumentData,
+  DocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import {
@@ -25,30 +26,37 @@ const COLLECTION_NAME = "tic-utas-notifications";
 
 // Firestoreデータを型付きNotificationに変換
 const convertFirestoreToNotification = (
-  id: string,
-  data: DocumentData
-): Notification => {
+  doc: DocumentSnapshot
+): Notification | null => {
+  const data = doc.data();
+  if (!data) return null;
+
+  const firestoreData = data as NotificationFirestore;
   return {
-    ...data,
-    id,
-    createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
-    updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
-  } as Notification;
+    ...firestoreData,
+    id: doc.id,
+    createdAt: new Date(firestoreData.createdAt),
+    updatedAt: new Date(firestoreData.updatedAt),
+    publishedAt: firestoreData.publishedAt.toDate(),
+  };
 };
 
 // Notificationデータを Firestoreデータに変換
 const convertNotificationToFirestore = (
   notification: Partial<Notification>
 ): Partial<NotificationFirestore> => {
-  const { createdAt, updatedAt, ...rest } = notification;
+  const { createdAt, updatedAt, publishedAt, ...rest } = notification;
   return {
     ...rest,
     createdAt: createdAt ? createdAt.toISOString() : new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    publishedAt: publishedAt
+      ? Timestamp.fromDate(publishedAt)
+      : Timestamp.now(),
   };
 };
 
-// 全通知を取得
+// 全ての通知を取得
 export const getAllNotifications = async (): Promise<Notification[]> => {
   try {
     const q = query(
@@ -57,9 +65,11 @@ export const getAllNotifications = async (): Promise<Notification[]> => {
     );
     const querySnapshot = await getDocs(q);
 
-    return querySnapshot.docs.map((doc) =>
-      convertFirestoreToNotification(doc.id, doc.data())
-    );
+    return querySnapshot.docs
+      .map((doc) => convertFirestoreToNotification(doc))
+      .filter(
+        (notification): notification is Notification => notification !== null
+      );
   } catch (error) {
     console.error("通知の取得に失敗しました:", error);
     throw error;
@@ -78,9 +88,11 @@ export const subscribeToNotifications = (
   return onSnapshot(
     q,
     (querySnapshot: QuerySnapshot<DocumentData>) => {
-      const notifications = querySnapshot.docs.map((doc) =>
-        convertFirestoreToNotification(doc.id, doc.data())
-      );
+      const notifications = querySnapshot.docs
+        .map((doc) => convertFirestoreToNotification(doc))
+        .filter(
+          (notification): notification is Notification => notification !== null
+        );
       callback(notifications);
     },
     (error) => {
@@ -98,7 +110,7 @@ export const getNotificationById = async (
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      return convertFirestoreToNotification(docSnap.id, docSnap.data());
+      return convertFirestoreToNotification(docSnap);
     } else {
       return null;
     }
@@ -114,16 +126,20 @@ export const createNotification = async (
 ): Promise<Notification> => {
   try {
     const now = new Date();
+    const publishedDate =
+      notificationData.deliveryType === "immediate"
+        ? now
+        : new Date(
+            `${notificationData.scheduledDate} ${notificationData.scheduledTime}`
+          );
+
     const newNotification: Partial<Notification> = {
       ...notificationData,
       status:
         notificationData.deliveryType === "immediate"
           ? "published"
           : "scheduled",
-      publishedAt:
-        notificationData.deliveryType === "immediate"
-          ? formatDateTime(now)
-          : `${notificationData.scheduledDate} ${notificationData.scheduledTime}`,
+      publishedAt: publishedDate,
       createdAt: now,
       updatedAt: now,
     };
@@ -148,14 +164,16 @@ export const updateNotification = async (
 ): Promise<Notification> => {
   try {
     const now = new Date();
+    const publishedDate =
+      updateData.deliveryType === "immediate"
+        ? now
+        : new Date(`${updateData.scheduledDate} ${updateData.scheduledTime}`);
+
     const updatedNotification: Partial<Notification> = {
       ...updateData,
       status:
         updateData.deliveryType === "immediate" ? "published" : "scheduled",
-      publishedAt:
-        updateData.deliveryType === "immediate"
-          ? formatDateTime(now)
-          : `${updateData.scheduledDate} ${updateData.scheduledTime}`,
+      publishedAt: publishedDate,
       updatedAt: now,
     };
 
@@ -182,16 +200,4 @@ export const deleteNotification = async (id: string): Promise<void> => {
     console.error("通知の削除に失敗しました:", error);
     throw error;
   }
-};
-
-// 日時フォーマット関数
-const formatDateTime = (date: Date): string => {
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    weekday: "short",
-  }).format(date);
 };

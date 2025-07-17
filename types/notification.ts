@@ -1,10 +1,12 @@
+import { Timestamp } from "firebase/firestore";
+
 // お知らせデータの型定義
 export type Notification = {
   id: string; // Firestoreのドキュメントidに対応
   title: string;
   content: string;
   department: string;
-  publishedAt: string;
+  publishedAt: Date;
   targetFaculties: string[];
   targetGrades: string[];
   isImportant: boolean;
@@ -22,10 +24,11 @@ export type Notification = {
 // Firestoreに保存するためのNotification型（Dateを文字列として扱う）
 export type NotificationFirestore = Omit<
   Notification,
-  "createdAt" | "updatedAt"
+  "createdAt" | "updatedAt" | "publishedAt"
 > & {
   createdAt: string; // ISO文字列として保存
   updatedAt: string; // ISO文字列として保存
+  publishedAt: Timestamp; // Timestampとして保存
 };
 
 // お知らせフォームデータの型定義

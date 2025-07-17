@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { X, AlertTriangle, Building, Calendar } from "lucide-react";
 import { Notification } from "@/types/notification";
+import { safeFormat } from "@/lib/date-utils";
 
 interface NotificationPreviewProps {
   notification: Notification;
@@ -89,7 +90,10 @@ export function NotificationPreview({
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Calendar className="h-4 w-4" />
-                <span>掲載日時: {notification.publishedAt}</span>
+                <span>
+                  掲載日時:{" "}
+                  {safeFormat(notification.publishedAt, "yyyy年MM月dd日 HH:mm")}
+                </span>
               </div>
             </div>
 

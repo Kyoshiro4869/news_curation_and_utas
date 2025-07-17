@@ -20,6 +20,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { Notification } from "@/types/notification";
+import { safeFormat } from "@/lib/date-utils";
 
 interface NotificationListProps {
   notifications: Notification[];
@@ -145,7 +146,7 @@ export function NotificationList({
               {/* アプリ配信日時列 */}
               <div className="col-span-2">
                 <div className="text-sm text-gray-900 mb-1">
-                  {notification.publishedAt}
+                  {safeFormat(notification.publishedAt, "yyyy/MM/dd HH:mm")}
                 </div>
                 <Badge
                   variant={

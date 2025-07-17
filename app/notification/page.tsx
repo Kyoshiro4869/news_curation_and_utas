@@ -17,6 +17,7 @@ import {
   updateNotification,
   deleteNotification,
 } from "@/lib/notification-service";
+import { safeFormat } from "@/lib/date-utils";
 
 export default function AdminDashboard() {
   const [mounted, setMounted] = useState(false);
@@ -45,14 +46,7 @@ export default function AdminDashboard() {
 
   const formatDateTime = (date: Date): string => {
     if (!mounted) return "";
-    return new Intl.DateTimeFormat("ja-JP", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      weekday: "short",
-    }).format(date);
+    return safeFormat(date, "yyyy年MM月dd日 HH:mm");
   };
 
   const handleCreateNotification = async (
