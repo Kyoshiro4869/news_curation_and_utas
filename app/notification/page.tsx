@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,13 @@ import {
   deleteNotification,
 } from "@/lib/notification-service";
 import { safeFormat } from "@/lib/date-utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function AdminDashboard() {
   const [mounted, setMounted] = useState(false);
@@ -30,6 +37,7 @@ export default function AdminDashboard() {
     useState<Notification | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"utas" | "app">("utas");
 
   useEffect(() => {
     setMounted(true);
@@ -99,11 +107,57 @@ export default function AdminDashboard() {
     }
   };
 
-  const filteredNotifications = notifications.filter(
-    (notification) =>
-      notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      notification.department.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredNotifications = useMemo(
+    () =>
+      notifications.filter(
+        (notification) =>
+          notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          notification.department
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
+      ),
+    [notifications, searchTerm]
   );
+
+  const parseUtasDateTime = (date?: string, time?: string) => {
+    if (!date || !time) return null;
+
+    const dateParts = date.split(/[./-]/).map((part) => parseInt(part, 10));
+    const timeParts = time.split(":").map((part) => parseInt(part, 10));
+
+    if (
+      dateParts.length < 3 ||
+      dateParts.some((value) => Number.isNaN(value)) ||
+      timeParts.length < 2 ||
+      timeParts.some((value) => Number.isNaN(value))
+    ) {
+      return null;
+    }
+
+    const [year, month, day] = dateParts;
+    const [hours, minutes] = timeParts;
+
+    return new Date(year, month - 1, day, hours, minutes);
+  };
+
+  const sortedNotifications = useMemo(() => {
+    const getSortValue = (notification: Notification) => {
+      if (sortBy === "app") {
+        return notification.publishedAt?.getTime() ?? -Infinity;
+      }
+
+      const utasDate = parseUtasDateTime(
+        notification.utasPublishedDate,
+        notification.utasPublishedTime
+      );
+
+      return utasDate ? utasDate.getTime() : -Infinity;
+    };
+
+    return [...filteredNotifications].sort(
+      (a, b) => getSortValue(b) - getSortValue(a)
+    );
+  }, [filteredNotifications, sortBy]);
 
   const calculateStats = () => {
     if (!mounted) return { total: 0, important: 0, thisWeek: 0 };
@@ -199,15 +253,28 @@ export default function AdminDashboard() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-6">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="お知らせを検索..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 w-full sm:flex-row sm:items-center">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="お知らせを検索..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="w-full sm:w-56">
+                <Select value={sortBy} onValueChange={(value) => setSortBy(value as "utas" | "app")}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="ソート基準を選択" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="utas">UTAS掲載日時順（新しい順）</SelectItem>
+                    <SelectItem value="app">アプリ配信日時順（新しい順）</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <Button
               onClick={() => setActiveTab("create")}
@@ -219,10 +286,11 @@ export default function AdminDashboard() {
           </div>
 
           <NotificationList
-            notifications={filteredNotifications}
+            notifications={sortedNotifications}
             onView={setSelectedNotification}
             onEdit={setEditingNotification}
             onDelete={handleDeleteNotification}
+            sortBy={sortBy}
           />
         </TabsContent>
 
