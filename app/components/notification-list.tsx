@@ -18,15 +18,21 @@ import {
   Check,
   Building,
   Calendar,
+  ArrowUpDown,
 } from "lucide-react";
 import { Notification } from "@/types/notification";
 import { safeFormat } from "@/lib/date-utils";
+
+type SortKey = "utas" | "app";
+type SortDirection = "asc" | "desc";
 
 interface NotificationListProps {
   notifications: Notification[];
   onView: (notification: Notification) => void;
   onEdit: (notification: Notification) => void;
   onDelete: (id: string) => void;
+  sortConfig: { key: SortKey; direction: SortDirection };
+  onSortChange: (key: SortKey) => void;
 }
 
 export function NotificationList({
@@ -34,6 +40,8 @@ export function NotificationList({
   onView,
   onEdit,
   onDelete,
+  sortConfig,
+  onSortChange,
 }: NotificationListProps) {
   const formatTargets = (faculties: string[], grades: string[]) => {
     const facultyText =
@@ -66,6 +74,16 @@ export function NotificationList({
     );
   }
 
+  const isUtasSort = sortConfig.key === "utas";
+  const isAppSort = sortConfig.key === "app";
+
+  const sortIconClass = (key: SortKey) =>
+    `${sortConfig.key === key ? "text-blue-600" : "text-gray-400"} ${
+      sortConfig.key === key && sortConfig.direction === "asc"
+        ? "rotate-180"
+        : ""
+    }`;
+
   return (
     <Card>
       <CardContent className="p-0">
@@ -74,8 +92,34 @@ export function NotificationList({
           <div className="col-span-3">タイトル</div>
           <div className="col-span-2">配信元</div>
           <div className="col-span-2">対象学部/学年</div>
-          <div className="col-span-2">UTAS掲載日時</div>
-          <div className="col-span-2">アプリ配信日時</div>
+          <div className="col-span-2">
+            <Button
+              variant="ghost"
+              onClick={() => onSortChange("utas")}
+              className={`-ml-3 h-auto px-2 py-1 text-left text-sm font-medium ${
+                isUtasSort ? "text-blue-600" : "text-gray-700"
+              }`}
+            >
+              <span className="flex items-center gap-1">
+                UTAS掲載日時
+                <ArrowUpDown className={`h-3.5 w-3.5 transition ${sortIconClass("utas")}`} />
+              </span>
+            </Button>
+          </div>
+          <div className="col-span-2">
+            <Button
+              variant="ghost"
+              onClick={() => onSortChange("app")}
+              className={`-ml-3 h-auto px-2 py-1 text-left text-sm font-medium ${
+                isAppSort ? "text-blue-600" : "text-gray-700"
+              }`}
+            >
+              <span className="flex items-center gap-1">
+                アプリ配信日時
+                <ArrowUpDown className={`h-3.5 w-3.5 transition ${sortIconClass("app")}`} />
+              </span>
+            </Button>
+          </div>
           <div className="col-span-1"></div>
         </div>
 
@@ -131,7 +175,11 @@ export function NotificationList({
               </div>
 
               {/* UTAS掲載日時列 */}
-              <div className="col-span-2">
+              <div
+                className={`col-span-2 ${
+                  isUtasSort ? "text-blue-700" : ""
+                }`}
+              >
                 <div className="flex items-center gap-1 text-sm text-gray-900">
                   <Calendar className="w-3 h-3 text-gray-500" />
                   <span>
@@ -144,7 +192,11 @@ export function NotificationList({
               </div>
 
               {/* アプリ配信日時列 */}
-              <div className="col-span-2">
+              <div
+                className={`col-span-2 ${
+                  isAppSort ? "text-blue-700" : ""
+                }`}
+              >
                 <div className="text-sm text-gray-900 mb-1">
                   {safeFormat(notification.publishedAt, "yyyy/MM/dd HH:mm")}
                 </div>

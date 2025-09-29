@@ -26,19 +26,34 @@ const COLLECTION_NAME = "tic-utas-notifications";
 
 // Firestoreデータを型付きNotificationに変換
 const convertFirestoreToNotification = (
-  doc: DocumentSnapshot
+  docSnapshot: DocumentSnapshot
 ): Notification | null => {
-  const data = doc.data();
+  const data = docSnapshot.data();
   if (!data) return null;
 
   const firestoreData = data as NotificationFirestore;
-  return {
+  const notification: Notification = {
     ...firestoreData,
-    id: doc.id,
+    id: docSnapshot.id,
     createdAt: new Date(firestoreData.createdAt),
     updatedAt: new Date(firestoreData.updatedAt),
     publishedAt: firestoreData.publishedAt.toDate(),
   };
+
+  if (
+    notification.status === "scheduled" &&
+    notification.publishedAt.getTime() <= Date.now()
+  ) {
+    notification.status = "published";
+    void updateDoc(docSnapshot.ref, {
+      status: "published",
+      updatedAt: new Date().toISOString(),
+    }).catch((error) => {
+      console.error("通知のステータス更新に失敗しました:", error);
+    });
+  }
+
+  return notification;
 };
 
 // Notificationデータを Firestoreデータに変換
