@@ -351,6 +351,10 @@ export default function AdminDashboard() {
             </Button>
           </div>
 
+          <div className="text-sm text-gray-500 text-right">
+            表示件数: {sortedNotifications.length}件
+          </div>
+
           <NotificationList
             notifications={sortedNotifications}
             onView={setSelectedNotification}
