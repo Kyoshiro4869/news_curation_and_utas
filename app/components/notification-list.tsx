@@ -88,6 +88,14 @@ export function NotificationList({
         : ""
     }`;
 
+  const getSortState = (key: SortKey): "ascending" | "descending" | "none" => {
+    if (sortConfig.key !== key) {
+      return "none";
+    }
+
+    return sortConfig.direction === "asc" ? "ascending" : "descending";
+  };
+
   return (
     <Card>
       <CardContent className="p-0">
@@ -96,7 +104,11 @@ export function NotificationList({
           <div className="col-span-3">タイトル</div>
           <div className="col-span-2">配信元</div>
           <div className="col-span-2">対象学部/学年</div>
-          <div className="col-span-2">
+          <div
+            className="col-span-2"
+            role="columnheader"
+            aria-sort={getSortState("utas")}
+          >
             <Button
               variant="ghost"
               onClick={() => onSortChange("utas")}
@@ -110,7 +122,11 @@ export function NotificationList({
               </span>
             </Button>
           </div>
-          <div className="col-span-2">
+          <div
+            className="col-span-2"
+            role="columnheader"
+            aria-sort={getSortState("app")}
+          >
             <Button
               variant="ghost"
               onClick={() => onSortChange("app")}

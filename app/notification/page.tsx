@@ -24,7 +24,6 @@ import {
   updateNotification,
   deleteNotification,
 } from "@/lib/notification-service";
-import { safeFormat } from "@/lib/date-utils";
 import { FACULTIES, GRADES } from "@/lib/notification-targets";
 type SortKey = "utas" | "app";
 type SortDirection = "asc" | "desc";
@@ -60,11 +59,6 @@ export default function AdminDashboard() {
     // クリーンアップ関数
     return () => unsubscribe();
   }, []);
-
-  const formatDateTime = (date: Date): string => {
-    if (!mounted) return "";
-    return safeFormat(date, "yyyy年MM月dd日 HH:mm");
-  };
 
   const handleCreateNotification = async (
     notificationData: NotificationFormData
