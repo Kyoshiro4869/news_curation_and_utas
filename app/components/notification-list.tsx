@@ -18,16 +18,24 @@ import {
   Check,
   Building,
   Calendar,
+  ArrowUpDown,
 } from "lucide-react";
 import { Notification } from "@/types/notification";
+import { FACULTIES, GRADES } from "@/lib/notification-targets";
 import { safeFormat } from "@/lib/date-utils";
+
+type SortKey = "utas" | "app";
+type SortDirection = "asc" | "desc";
 
 interface NotificationListProps {
   notifications: Notification[];
   onView: (notification: Notification) => void;
   onEdit: (notification: Notification) => void;
   onDelete: (id: string) => void;
-  sortBy: "utas" | "app";
+
+  sortConfig: { key: SortKey; direction: SortDirection };
+  onSortChange: (key: SortKey) => void;
+
 }
 
 export function NotificationList({
@@ -35,18 +43,24 @@ export function NotificationList({
   onView,
   onEdit,
   onDelete,
-  sortBy,
+
+  sortConfig,
+  onSortChange,
+
 }: NotificationListProps) {
   const formatTargets = (faculties: string[], grades: string[]) => {
-    const facultyText =
-      faculties.length === 25
-        ? "全学部"
-        : faculties.slice(0, 2).join(", ") +
-          (faculties.length > 2 ? "..." : "");
-    const gradeText =
-      grades.length === 7
-        ? "全学年"
-        : grades.slice(0, 2).join(", ") + (grades.length > 2 ? "..." : "");
+    const hasAllFaculties =
+      faculties.length === FACULTIES.length || faculties.includes("全学部");
+    const hasAllGrades =
+      grades.length === GRADES.length || grades.includes("全学年");
+
+    const facultyText = hasAllFaculties
+      ? "全学部"
+      : faculties.slice(0, 2).join(", ") +
+        (faculties.length > 2 ? "..." : "");
+    const gradeText = hasAllGrades
+      ? "全学年"
+      : grades.slice(0, 2).join(", ") + (grades.length > 2 ? "..." : "");
     return `${facultyText} / ${gradeText}`;
   };
 
@@ -68,8 +82,25 @@ export function NotificationList({
     );
   }
 
-  const isUtasSort = sortBy === "utas";
-  const isAppSort = sortBy === "app";
+
+  const isUtasSort = sortConfig.key === "utas";
+  const isAppSort = sortConfig.key === "app";
+
+  const sortIconClass = (key: SortKey) =>
+    `${sortConfig.key === key ? "text-blue-600" : "text-gray-400"} ${
+      sortConfig.key === key && sortConfig.direction === "asc"
+        ? "rotate-180"
+        : ""
+    }`;
+
+  const getSortState = (key: SortKey): "ascending" | "descending" | "none" => {
+    if (sortConfig.key !== key) {
+      return "none";
+    }
+
+    return sortConfig.direction === "asc" ? "ascending" : "descending";
+  };
+
 
   return (
     <Card>
@@ -80,18 +111,42 @@ export function NotificationList({
           <div className="col-span-2">配信元</div>
           <div className="col-span-2">対象学部/学年</div>
           <div
-            className={`col-span-2 ${
-              isUtasSort ? "text-blue-600" : ""
-            }`}
+
+            className="col-span-2"
+            role="columnheader"
+            aria-sort={getSortState("utas")}
           >
-            UTAS掲載日時
+            <Button
+              variant="ghost"
+              onClick={() => onSortChange("utas")}
+              className={`-ml-3 h-auto px-2 py-1 text-left text-sm font-medium ${
+                isUtasSort ? "text-blue-600" : "text-gray-700"
+              }`}
+            >
+              <span className="flex items-center gap-1">
+                UTAS掲載日時
+                <ArrowUpDown className={`h-3.5 w-3.5 transition ${sortIconClass("utas")}`} />
+              </span>
+            </Button>
           </div>
           <div
-            className={`col-span-2 ${
-              isAppSort ? "text-blue-600" : ""
-            }`}
+            className="col-span-2"
+            role="columnheader"
+            aria-sort={getSortState("app")}
           >
-            アプリ配信日時
+            <Button
+              variant="ghost"
+              onClick={() => onSortChange("app")}
+              className={`-ml-3 h-auto px-2 py-1 text-left text-sm font-medium ${
+                isAppSort ? "text-blue-600" : "text-gray-700"
+              }`}
+            >
+              <span className="flex items-center gap-1">
+                アプリ配信日時
+                <ArrowUpDown className={`h-3.5 w-3.5 transition ${sortIconClass("app")}`} />
+              </span>
+            </Button>
+
           </div>
           <div className="col-span-1"></div>
         </div>

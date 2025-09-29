@@ -4,6 +4,13 @@ import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Send, Calendar, AlertTriangle } from "lucide-react";
 import { NotificationForm } from "../components/notification-form";
@@ -17,14 +24,15 @@ import {
   updateNotification,
   deleteNotification,
 } from "@/lib/notification-service";
+
+import { FACULTIES, GRADES } from "@/lib/notification-targets";
+type SortKey = "utas" | "app";
+type SortDirection = "asc" | "desc";
+type SortConfig = { key: SortKey; direction: SortDirection };
+
 import { safeFormat } from "@/lib/date-utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
+
 
 export default function AdminDashboard() {
   const [mounted, setMounted] = useState(false);
@@ -33,11 +41,18 @@ export default function AdminDashboard() {
     useState<Notification | null>(null);
   const [activeTab, setActiveTab] = useState("create");
   const [searchTerm, setSearchTerm] = useState("");
+  const [facultyFilter, setFacultyFilter] = useState("all");
+  const [gradeFilter, setGradeFilter] = useState("all");
   const [editingNotification, setEditingNotification] =
     useState<Notification | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"utas" | "app">("utas");
+
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    key: "utas",
+    direction: "desc",
+  });
+
 
   useEffect(() => {
     setMounted(true);
@@ -51,11 +66,6 @@ export default function AdminDashboard() {
     // クリーンアップ関数
     return () => unsubscribe();
   }, []);
-
-  const formatDateTime = (date: Date): string => {
-    if (!mounted) return "";
-    return safeFormat(date, "yyyy年MM月dd日 HH:mm");
-  };
 
   const handleCreateNotification = async (
     notificationData: NotificationFormData
@@ -109,14 +119,30 @@ export default function AdminDashboard() {
 
   const filteredNotifications = useMemo(
     () =>
-      notifications.filter(
-        (notification) =>
-          notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          notification.department
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-      ),
-    [notifications, searchTerm]
+
+      notifications.filter((notification) => {
+        const normalizedQuery = searchTerm.toLowerCase();
+        const matchesSearch =
+          notification.title.toLowerCase().includes(normalizedQuery) ||
+          notification.department.toLowerCase().includes(normalizedQuery);
+
+        const faculties = notification.targetFaculties || [];
+        const grades = notification.targetGrades || [];
+
+        const matchesFaculty =
+          facultyFilter === "all" ||
+          faculties.includes(facultyFilter) ||
+          faculties.includes("全学部");
+
+        const matchesGrade =
+          gradeFilter === "all" ||
+          grades.includes(gradeFilter) ||
+          grades.includes("全学年");
+
+        return matchesSearch && matchesFaculty && matchesGrade;
+      }),
+    [notifications, searchTerm, facultyFilter, gradeFilter]
+
   );
 
   const parseUtasDateTime = (date?: string, time?: string) => {
@@ -141,9 +167,17 @@ export default function AdminDashboard() {
   };
 
   const sortedNotifications = useMemo(() => {
+
+    const fallbackValue =
+      sortConfig.direction === "asc"
+        ? Number.POSITIVE_INFINITY
+        : Number.NEGATIVE_INFINITY;
+
     const getSortValue = (notification: Notification) => {
-      if (sortBy === "app") {
-        return notification.publishedAt?.getTime() ?? -Infinity;
+      if (sortConfig.key === "app") {
+        const timestamp = notification.publishedAt?.getTime();
+        return Number.isFinite(timestamp) ? (timestamp as number) : fallbackValue;
+
       }
 
       const utasDate = parseUtasDateTime(
@@ -151,13 +185,35 @@ export default function AdminDashboard() {
         notification.utasPublishedTime
       );
 
-      return utasDate ? utasDate.getTime() : -Infinity;
+
+      return utasDate ? utasDate.getTime() : fallbackValue;
     };
 
-    return [...filteredNotifications].sort(
-      (a, b) => getSortValue(b) - getSortValue(a)
-    );
-  }, [filteredNotifications, sortBy]);
+    const directionMultiplier = sortConfig.direction === "asc" ? 1 : -1;
+
+    return [...filteredNotifications].sort((a, b) => {
+      const diff = getSortValue(a) - getSortValue(b);
+      if (Number.isNaN(diff) || diff === 0) {
+        return 0;
+      }
+
+      return diff * directionMultiplier;
+    });
+  }, [filteredNotifications, sortConfig]);
+
+  const handleSortChange = (key: SortKey) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        return {
+          key,
+          direction: prev.direction === "asc" ? "desc" : "asc",
+        };
+      }
+
+      return { key, direction: "desc" };
+    });
+  };
+
 
   const calculateStats = () => {
     if (!mounted) return { total: 0, important: 0, thisWeek: 0 };
@@ -253,10 +309,12 @@ export default function AdminDashboard() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-4 w-full sm:flex-row sm:items-center">
+
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex w-full flex-col gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+
                 <Input
                   placeholder="お知らせを検索..."
                   value={searchTerm}
@@ -264,14 +322,33 @@ export default function AdminDashboard() {
                   className="pl-10"
                 />
               </div>
-              <div className="w-full sm:w-56">
-                <Select value={sortBy} onValueChange={(value) => setSortBy(value as "utas" | "app")}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="ソート基準を選択" />
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Select value={facultyFilter} onValueChange={setFacultyFilter}>
+                  <SelectTrigger className="w-full sm:w-[220px]">
+                    <SelectValue placeholder="対象学部を選択" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="utas">UTAS掲載日時順（新しい順）</SelectItem>
-                    <SelectItem value="app">アプリ配信日時順（新しい順）</SelectItem>
+                    <SelectItem value="all">全ての学部</SelectItem>
+                    {FACULTIES.map((faculty) => (
+                      <SelectItem key={faculty} value={faculty}>
+                        {faculty}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={gradeFilter} onValueChange={setGradeFilter}>
+                  <SelectTrigger className="w-full sm:w-[220px]">
+                    <SelectValue placeholder="対象学年を選択" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全ての学年</SelectItem>
+                    {GRADES.map((grade) => (
+                      <SelectItem key={grade} value={grade}>
+                        {grade}
+                      </SelectItem>
+                    ))}
+
                   </SelectContent>
                 </Select>
               </div>
@@ -280,9 +357,13 @@ export default function AdminDashboard() {
               onClick={() => setActiveTab("create")}
               className="w-full sm:w-auto"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               新規作成
             </Button>
+          </div>
+
+          <div className="text-sm text-gray-500 text-right">
+            表示件数: {sortedNotifications.length}件
           </div>
 
           <NotificationList
@@ -290,7 +371,10 @@ export default function AdminDashboard() {
             onView={setSelectedNotification}
             onEdit={setEditingNotification}
             onDelete={handleDeleteNotification}
-            sortBy={sortBy}
+
+            sortConfig={sortConfig}
+            onSortChange={handleSortChange}
+
           />
         </TabsContent>
 
