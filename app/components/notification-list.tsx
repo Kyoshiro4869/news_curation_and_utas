@@ -27,6 +27,7 @@ interface NotificationListProps {
   onView: (notification: Notification) => void;
   onEdit: (notification: Notification) => void;
   onDelete: (id: string) => void;
+  sortBy: "utas" | "app";
 }
 
 export function NotificationList({
@@ -34,6 +35,7 @@ export function NotificationList({
   onView,
   onEdit,
   onDelete,
+  sortBy,
 }: NotificationListProps) {
   const formatTargets = (faculties: string[], grades: string[]) => {
     const facultyText =
@@ -66,6 +68,9 @@ export function NotificationList({
     );
   }
 
+  const isUtasSort = sortBy === "utas";
+  const isAppSort = sortBy === "app";
+
   return (
     <Card>
       <CardContent className="p-0">
@@ -74,8 +79,20 @@ export function NotificationList({
           <div className="col-span-3">タイトル</div>
           <div className="col-span-2">配信元</div>
           <div className="col-span-2">対象学部/学年</div>
-          <div className="col-span-2">UTAS掲載日時</div>
-          <div className="col-span-2">アプリ配信日時</div>
+          <div
+            className={`col-span-2 ${
+              isUtasSort ? "text-blue-600" : ""
+            }`}
+          >
+            UTAS掲載日時
+          </div>
+          <div
+            className={`col-span-2 ${
+              isAppSort ? "text-blue-600" : ""
+            }`}
+          >
+            アプリ配信日時
+          </div>
           <div className="col-span-1"></div>
         </div>
 
@@ -131,7 +148,11 @@ export function NotificationList({
               </div>
 
               {/* UTAS掲載日時列 */}
-              <div className="col-span-2">
+              <div
+                className={`col-span-2 ${
+                  isUtasSort ? "text-blue-700" : ""
+                }`}
+              >
                 <div className="flex items-center gap-1 text-sm text-gray-900">
                   <Calendar className="w-3 h-3 text-gray-500" />
                   <span>
@@ -144,7 +165,11 @@ export function NotificationList({
               </div>
 
               {/* アプリ配信日時列 */}
-              <div className="col-span-2">
+              <div
+                className={`col-span-2 ${
+                  isAppSort ? "text-blue-700" : ""
+                }`}
+              >
                 <div className="text-sm text-gray-900 mb-1">
                   {safeFormat(notification.publishedAt, "yyyy/MM/dd HH:mm")}
                 </div>
