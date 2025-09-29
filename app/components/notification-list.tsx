@@ -32,8 +32,10 @@ interface NotificationListProps {
   onView: (notification: Notification) => void;
   onEdit: (notification: Notification) => void;
   onDelete: (id: string) => void;
+
   sortConfig: { key: SortKey; direction: SortDirection };
   onSortChange: (key: SortKey) => void;
+
 }
 
 export function NotificationList({
@@ -41,8 +43,10 @@ export function NotificationList({
   onView,
   onEdit,
   onDelete,
+
   sortConfig,
   onSortChange,
+
 }: NotificationListProps) {
   const formatTargets = (faculties: string[], grades: string[]) => {
     const hasAllFaculties =
@@ -78,6 +82,7 @@ export function NotificationList({
     );
   }
 
+
   const isUtasSort = sortConfig.key === "utas";
   const isAppSort = sortConfig.key === "app";
 
@@ -96,6 +101,7 @@ export function NotificationList({
     return sortConfig.direction === "asc" ? "ascending" : "descending";
   };
 
+
   return (
     <Card>
       <CardContent className="p-0">
@@ -105,6 +111,7 @@ export function NotificationList({
           <div className="col-span-2">配信元</div>
           <div className="col-span-2">対象学部/学年</div>
           <div
+
             className="col-span-2"
             role="columnheader"
             aria-sort={getSortState("utas")}
@@ -139,6 +146,7 @@ export function NotificationList({
                 <ArrowUpDown className={`h-3.5 w-3.5 transition ${sortIconClass("app")}`} />
               </span>
             </Button>
+
           </div>
           <div className="col-span-1"></div>
         </div>

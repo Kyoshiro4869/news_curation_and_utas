@@ -24,10 +24,15 @@ import {
   updateNotification,
   deleteNotification,
 } from "@/lib/notification-service";
+
 import { FACULTIES, GRADES } from "@/lib/notification-targets";
 type SortKey = "utas" | "app";
 type SortDirection = "asc" | "desc";
 type SortConfig = { key: SortKey; direction: SortDirection };
+
+import { safeFormat } from "@/lib/date-utils";
+
+
 
 export default function AdminDashboard() {
   const [mounted, setMounted] = useState(false);
@@ -42,10 +47,12 @@ export default function AdminDashboard() {
     useState<Notification | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: "utas",
     direction: "desc",
   });
+
 
   useEffect(() => {
     setMounted(true);
@@ -112,6 +119,7 @@ export default function AdminDashboard() {
 
   const filteredNotifications = useMemo(
     () =>
+
       notifications.filter((notification) => {
         const normalizedQuery = searchTerm.toLowerCase();
         const matchesSearch =
@@ -134,6 +142,7 @@ export default function AdminDashboard() {
         return matchesSearch && matchesFaculty && matchesGrade;
       }),
     [notifications, searchTerm, facultyFilter, gradeFilter]
+
   );
 
   const parseUtasDateTime = (date?: string, time?: string) => {
@@ -158,6 +167,7 @@ export default function AdminDashboard() {
   };
 
   const sortedNotifications = useMemo(() => {
+
     const fallbackValue =
       sortConfig.direction === "asc"
         ? Number.POSITIVE_INFINITY
@@ -167,12 +177,14 @@ export default function AdminDashboard() {
       if (sortConfig.key === "app") {
         const timestamp = notification.publishedAt?.getTime();
         return Number.isFinite(timestamp) ? (timestamp as number) : fallbackValue;
+
       }
 
       const utasDate = parseUtasDateTime(
         notification.utasPublishedDate,
         notification.utasPublishedTime
       );
+
 
       return utasDate ? utasDate.getTime() : fallbackValue;
     };
@@ -201,6 +213,7 @@ export default function AdminDashboard() {
       return { key, direction: "desc" };
     });
   };
+
 
   const calculateStats = () => {
     if (!mounted) return { total: 0, important: 0, thisWeek: 0 };
@@ -296,10 +309,12 @@ export default function AdminDashboard() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-6">
+
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex w-full flex-col gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+
                 <Input
                   placeholder="お知らせを検索..."
                   value={searchTerm}
@@ -307,6 +322,7 @@ export default function AdminDashboard() {
                   className="pl-10"
                 />
               </div>
+
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Select value={facultyFilter} onValueChange={setFacultyFilter}>
                   <SelectTrigger className="w-full sm:w-[220px]">
@@ -332,6 +348,7 @@ export default function AdminDashboard() {
                         {grade}
                       </SelectItem>
                     ))}
+
                   </SelectContent>
                 </Select>
               </div>
@@ -354,8 +371,10 @@ export default function AdminDashboard() {
             onView={setSelectedNotification}
             onEdit={setEditingNotification}
             onDelete={handleDeleteNotification}
+
             sortConfig={sortConfig}
             onSortChange={handleSortChange}
+
           />
         </TabsContent>
 
