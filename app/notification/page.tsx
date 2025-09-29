@@ -4,6 +4,13 @@ import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Send, Calendar, AlertTriangle } from "lucide-react";
 import { NotificationForm } from "../components/notification-form";
@@ -18,6 +25,7 @@ import {
   deleteNotification,
 } from "@/lib/notification-service";
 import { safeFormat } from "@/lib/date-utils";
+import { FACULTIES, GRADES } from "@/lib/notification-targets";
 type SortKey = "utas" | "app";
 type SortDirection = "asc" | "desc";
 type SortConfig = { key: SortKey; direction: SortDirection };
@@ -29,6 +37,8 @@ export default function AdminDashboard() {
     useState<Notification | null>(null);
   const [activeTab, setActiveTab] = useState("create");
   const [searchTerm, setSearchTerm] = useState("");
+  const [facultyFilter, setFacultyFilter] = useState("all");
+  const [gradeFilter, setGradeFilter] = useState("all");
   const [editingNotification, setEditingNotification] =
     useState<Notification | null>(null);
   const [loading, setLoading] = useState(true);
@@ -108,14 +118,28 @@ export default function AdminDashboard() {
 
   const filteredNotifications = useMemo(
     () =>
-      notifications.filter(
-        (notification) =>
-          notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          notification.department
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-      ),
-    [notifications, searchTerm]
+      notifications.filter((notification) => {
+        const normalizedQuery = searchTerm.toLowerCase();
+        const matchesSearch =
+          notification.title.toLowerCase().includes(normalizedQuery) ||
+          notification.department.toLowerCase().includes(normalizedQuery);
+
+        const faculties = notification.targetFaculties || [];
+        const grades = notification.targetGrades || [];
+
+        const matchesFaculty =
+          facultyFilter === "all" ||
+          faculties.includes(facultyFilter) ||
+          faculties.includes("全学部");
+
+        const matchesGrade =
+          gradeFilter === "all" ||
+          grades.includes(gradeFilter) ||
+          grades.includes("全学年");
+
+        return matchesSearch && matchesFaculty && matchesGrade;
+      }),
+    [notifications, searchTerm, facultyFilter, gradeFilter]
   );
 
   const parseUtasDateTime = (date?: string, time?: string) => {
@@ -180,7 +204,7 @@ export default function AdminDashboard() {
         };
       }
 
-      return { key, direction: "asc" };
+      return { key, direction: "desc" };
     });
   };
 
@@ -278,10 +302,10 @@ export default function AdminDashboard() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-4 w-full sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex w-full flex-col gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
                 <Input
                   placeholder="お知らせを検索..."
                   value={searchTerm}
@@ -289,12 +313,40 @@ export default function AdminDashboard() {
                   className="pl-10"
                 />
               </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Select value={facultyFilter} onValueChange={setFacultyFilter}>
+                  <SelectTrigger className="w-full sm:w-[220px]">
+                    <SelectValue placeholder="対象学部を選択" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全ての学部</SelectItem>
+                    {FACULTIES.map((faculty) => (
+                      <SelectItem key={faculty} value={faculty}>
+                        {faculty}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={gradeFilter} onValueChange={setGradeFilter}>
+                  <SelectTrigger className="w-full sm:w-[220px]">
+                    <SelectValue placeholder="対象学年を選択" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全ての学年</SelectItem>
+                    {GRADES.map((grade) => (
+                      <SelectItem key={grade} value={grade}>
+                        {grade}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <Button
               onClick={() => setActiveTab("create")}
               className="w-full sm:w-auto"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               新規作成
             </Button>
           </div>

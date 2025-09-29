@@ -21,6 +21,7 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import { Notification } from "@/types/notification";
+import { FACULTIES, GRADES } from "@/lib/notification-targets";
 import { safeFormat } from "@/lib/date-utils";
 
 type SortKey = "utas" | "app";
@@ -44,15 +45,18 @@ export function NotificationList({
   onSortChange,
 }: NotificationListProps) {
   const formatTargets = (faculties: string[], grades: string[]) => {
-    const facultyText =
-      faculties.length === 25
-        ? "全学部"
-        : faculties.slice(0, 2).join(", ") +
-          (faculties.length > 2 ? "..." : "");
-    const gradeText =
-      grades.length === 7
-        ? "全学年"
-        : grades.slice(0, 2).join(", ") + (grades.length > 2 ? "..." : "");
+    const hasAllFaculties =
+      faculties.length === FACULTIES.length || faculties.includes("全学部");
+    const hasAllGrades =
+      grades.length === GRADES.length || grades.includes("全学年");
+
+    const facultyText = hasAllFaculties
+      ? "全学部"
+      : faculties.slice(0, 2).join(", ") +
+        (faculties.length > 2 ? "..." : "");
+    const gradeText = hasAllGrades
+      ? "全学年"
+      : grades.slice(0, 2).join(", ") + (grades.length > 2 ? "..." : "");
     return `${facultyText} / ${gradeText}`;
   };
 

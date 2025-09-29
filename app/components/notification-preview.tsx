@@ -11,6 +11,7 @@ import {
 import { X, AlertTriangle, Building, Calendar } from "lucide-react";
 import { Notification } from "@/types/notification";
 import { safeFormat } from "@/lib/date-utils";
+import { FACULTIES, GRADES } from "@/lib/notification-targets";
 
 interface NotificationPreviewProps {
   notification: Notification;
@@ -112,7 +113,10 @@ export function NotificationPreview({
                 <div>
                   <span className="text-sm text-gray-600">対象学部: </span>
                   <span className="text-sm">
-                    {notification.targetFaculties.length === 25
+                    {(
+                      notification.targetFaculties.length === FACULTIES.length ||
+                      notification.targetFaculties.includes("全学部")
+                    )
                       ? "全学部"
                       : notification.targetFaculties.join(", ")}
                   </span>
@@ -120,7 +124,10 @@ export function NotificationPreview({
                 <div>
                   <span className="text-sm text-gray-600">対象学年: </span>
                   <span className="text-sm">
-                    {notification.targetGrades.length === 7
+                    {(
+                      notification.targetGrades.length === GRADES.length ||
+                      notification.targetGrades.includes("全学年")
+                    )
                       ? "全学年"
                       : notification.targetGrades.join(", ")}
                   </span>
